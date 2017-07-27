@@ -13,33 +13,35 @@ import kotlinx.android.synthetic.main.fragment_sunset.*
 
 class SunsetFragment : Fragment() {
 
+    var isDay = true
+
     override fun onCreateView(inflater: LayoutInflater?, container: ViewGroup?, savedInstanceState: Bundle?): View? {
         val binding = DataBindingUtil.inflate<FragmentSunsetBinding>(inflater, R.layout.fragment_sunset, container, false)
         val view = binding.root
         view.setOnClickListener {
-            startAnimation()
+            if (isDay) sunsetAnimation()
+            else sunupAnimation()
         }
         return view
     }
 
-    private fun startAnimation() {
-        val start = sun.top.toFloat()
-        val end = sky.bottom.toFloat()
+    val start by lazy { sun.top.toFloat() }
+    val end by lazy { sky.bottom.toFloat() }
+    val blueSky by lazy { getColor(R.color.blue_sky) }
+    val sunsetSky by lazy { getColor(R.color.sunset_sky) }
+    val nightSky by lazy { getColor(R.color.night_sky) }
 
-        val sunAnimator = ObjectAnimator.ofFloat(sun, "y", start, end).apply {
+    private fun sunsetAnimation() {
+        isDay = false
+        val sunsetAnimator = ObjectAnimator.ofFloat(sun, "y", start, end).apply {
             duration = 3000
             interpolator = AccelerateInterpolator()
         }
-
-        val blueSky = getColor(R.color.blue_sky)
-        val sunsetSky = getColor(R.color.sunset_sky)
 
         val sunsetSkyAnimator = ObjectAnimator.ofInt(sky, "backgroundColor", blueSky, sunsetSky).apply {
             duration = 3000
             setEvaluator(ArgbEvaluator())
         }
-
-        val nightSky = getColor(R.color.night_sky)
 
         val nightAnimator = ObjectAnimator.ofInt(sky, "backgroundColor", sunsetSky, nightSky).apply {
             duration = 1500
@@ -47,7 +49,29 @@ class SunsetFragment : Fragment() {
         }
 
         val set = AnimatorSet()
-        set.play(sunAnimator).with(sunsetSkyAnimator).before(nightAnimator)
+        set.play(sunsetAnimator).with(sunsetSkyAnimator).before(nightAnimator)
+        set.start()
+    }
+
+    private fun sunupAnimation() {
+        isDay = true
+        val dayAnimator = ObjectAnimator.ofInt(sky, "backgroundColor", nightSky, sunsetSky).apply {
+            duration = 1500
+            setEvaluator(ArgbEvaluator())
+        }
+
+        val sunupSkyAnimator = ObjectAnimator.ofInt(sky, "backgroundColor", sunsetSky, blueSky).apply {
+            duration = 3000
+            setEvaluator(ArgbEvaluator())
+        }
+
+        val sunupAnimator = ObjectAnimator.ofFloat(sun, "y", end, start).apply {
+            duration = 3000
+            interpolator = AccelerateInterpolator()
+        }
+
+        val set = AnimatorSet()
+        set.play(sunupAnimator).with(sunupSkyAnimator).after(dayAnimator)
         set.start()
     }
 
